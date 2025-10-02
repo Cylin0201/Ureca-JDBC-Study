@@ -1,23 +1,14 @@
 package m1jdbc.jdbc;
 
-/*
-* JDBC : Java Database Connect
-* 5 Step.
-* - 1: Driver loading (mysql-connector-j-8.x.x.jar)
-*       Driver: DBMS의 제조사가 제공하는 DBMS와의 상호작용(접속, 트랜잭션)을 위한 클라이언트 모듈
-* - 2: Connection (id, pwd, ip_dbms, port_dbms)
-* - 3: 질의 생성 및 DBMS로 전송: Statement(Query를 담는 객체)
-* - 4: 결과 확인: CUD - 성공 건수 / R - ResultSet이라는 객체가 온다.
-*      ResultSet: 조회 결과를 담은 테이블 모양의 객체
-* - 5: Connection close
-*/
-
-// add build path 써서 .jar 파일을 넣어놓기는 했는데, 이것보다는 build.gradle이 더 편함.
-
 import java.sql.*;
+import java.util.Scanner;
 
-public class JDBC1Overview {
-    public static void main(String[] args) throws Exception {
+public class JDBC2Prepared {
+    public static void main(String[] args) throws Exception{
+        Scanner scan = new Scanner(System.in);
+        String inData = scan.nextLine();
+        scan.close();
+
         Class.forName("com.mysql.cj.jdbc.Driver");
 
         // DriverManager: 드라이버의 중복을 막음. 한 종류의 드라이버는 하나의 메모리에 로딩되도록 관리.
@@ -28,12 +19,24 @@ public class JDBC1Overview {
         );
 
         //쿼리 중간에는 띄어쓰기 넣어주기.
+//        String query = "SELECT e.empno, e.ename, e.job, e.mgr, e.hiredate, e.sal, d.deptno, d.dname, d.loc " +
+//                " FROM emp e, dept d" +
+//                " WHERE e.deptno = d.deptno AND e.ename = '" + inData + "'" +  //inData는 작은 따옴표 처리 해야함.
+//                " AND job = '" + 변수 + "'";
+//        Statement stmt = conn.createStatement();
+
+
+        //PreparedStatement 사용.
+        //쿼리에 입력 값이 들어갈 때, PreparedStatement가 더 편리하다.
         String query = "SELECT e.empno, e.ename, e.job, e.mgr, e.hiredate, e.sal, d.deptno, d.dname, d.loc " +
                 " FROM emp e, dept d" +
-                " WHERE e.deptno = d.deptno";
+                " WHERE e.deptno = d.deptno AND e.ename = ?";
 
-        Statement stmt = conn.createStatement();
-        ResultSet rs = stmt.executeQuery(query);
+        PreparedStatement psmt = conn.prepareStatement(query);
+        psmt.setString(1, inData);
+
+        ResultSet rs = psmt.executeQuery();
+        //커넥션이 끊기면 rs는 조회할 수 없다.
 
         while (rs.next()){
             System.out.print(rs.getInt("empno") + "\t");
@@ -46,7 +49,10 @@ public class JDBC1Overview {
             System.out.print(rs.getString("dname") + "\t");
             System.out.println(rs.getString("loc"));
         }
-
+        rs.close();
+        psmt.close();
         conn.close();
+
+        System.out.println();
     }
 }
